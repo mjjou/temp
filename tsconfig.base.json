@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [],
+  "exclude": ["node_modules", "dist"]
+}
+
+// Example Usage in Subprojects:
+// ex. packages/gateway/tsconfig.json
+//
+// {
+//   "extends": "../../tsconfig.base.json",
+//   "compilerOptions": {
+//     "outDir": "dist"
+//   },
+//   "include": ["src/**/*"]
+// }
