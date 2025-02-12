@@ -1,0 +1,25 @@
+@use './_variables' as _variables;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: _variables.$font-family-base;
+  font-size: _variables.$font-size-base;
+  line-height: 1.5;
+  background-color: _variables.$background-color;
+  color: _variables.$text-color;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul, ol {
+  list-style: none;
+}

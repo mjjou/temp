@@ -1,0 +1,13 @@
+@use './_variables' as _variables;
+
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin media-sm {
+  @media (max-width: _variables.$media-sm) {
+    @content;
+  }
+}
