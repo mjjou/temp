@@ -1,0 +1,28 @@
+body, h1, h2 {
+  background: black;
+  color: white;
+  font-family: sans-serif;
+}
+
+.movie-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.movie-overview {
+  height: 200px;
+  overflow-y: hidden;
+}
+
+.movie-card {
+  width: 200px;
+}
+
+.movie-title {
+  height: 50px;
+}
+
+.brand {
+  color: red;
+}
