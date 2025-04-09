@@ -16,7 +16,7 @@
       "node",
       "react",
       "react-dom"
-    ] // Include necessary types
+    ]
   },
   "include": [
     "src/**/*"
