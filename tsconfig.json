@@ -1,22 +1,32 @@
 {
   "compilerOptions": {
-    "target": "ES6",                // JavaScript target version
-    "module": "Node16",             // Module system for React apps
-    "jsx": "react-jsx",             // Enable React JSX support
+    "target": "ES6", // JavaScript target version
+    "module": "Node16", // Module system for React apps
+    "jsx": "react-jsx", // Enable React JSX support
     "outDir": "./dist",
     "rootDir": "./src",
-    "strict": true,                 // Enable all strict type-checking options
-    "esModuleInterop": true,        // Allows importing CommonJS modules
+    "strict": true, // Enable all strict type-checking options
+    "esModuleInterop": true, // Allows importing CommonJS modules
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "skipLibCheck": true,           // Skip type checks on library files
-    "moduleResolution": "node16",     // Resolve modules like Node.js
+    "skipLibCheck": true, // Skip type checks on library files
+    "moduleResolution": "node16", // Resolve modules like Node.js
     "allowSyntheticDefaultImports": true,
-    "types": ["node", "react", "react-dom"] // Include necessary types
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ]
   },
-  "include": ["src/**/*"],          // Include all files in the src folder
-  "exclude": ["node_modules"],
+  "include": [
+    "src/**/*"
+  ], // Include all files in the src folder
+  "exclude": [
+    "node_modules"
+  ],
   "ts-node": {
-    "require": ["tsconfig-paths/register"]
+    "require": [
+      "tsconfig-paths/register"
+    ]
   }
 }

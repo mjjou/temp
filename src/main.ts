@@ -1,4 +1,7 @@
-import ChatService from "./services/chat/chat.service.js";
+import { container } from './platform/di/container.js';
+import ChatService from './services/chat/chat.service.js';
 
-const chatService = new ChatService();
+
+const chatService = container.get(ChatService);
+
 chatService.init();
