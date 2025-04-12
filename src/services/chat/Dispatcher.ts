@@ -10,6 +10,17 @@ export class ChatDispatcher {
     ) { }
 
     public async routeRequest(req: Request, res: Response): Promise<void> {
+
+        if (req.method === 'GET') {
+            if (req.path === '/api/messages/private') {
+                await this.handlePrivateMessagesRequest(req, res);
+                return;
+            } else if (req.path === '/api/messages/public') {
+                await this.handlePublicMessagesRequest(req, res);
+                return;
+            }
+        }
+
         const { type, payload } = req.body;
 
         switch (type) {
@@ -28,13 +39,6 @@ export class ChatDispatcher {
                 res.status(200).json({ success: true });
                 break;
 
-            case 'GET_PRIVATE_MESSAGES':
-                await this.handlePrivateMessagesRequest(req, res);
-                break;
-            case 'GET_PUBLIC_MESSAGES':
-                await this.handlePublicMessagesRequest(req, res);
-                break;
-
             default:
                 res.status(400).json({ success: false, error: 'Unknown request type' });
         }
@@ -42,19 +46,19 @@ export class ChatDispatcher {
 
     async handlePrivateMessagesRequest(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.query.userId as string;
+            const senderId = req.query.senderId as string;
             const recipientId = req.query.recipientId as string;
             const limit = parseInt(req.query.limit as string) || 50;
 
-            if (!userId || !recipientId) {
+            if (!senderId || !recipientId) {
                 res.status(400).json({
                     success: false,
-                    error: 'userId and recipientId parameters are required'
+                    error: 'senderId and recipientId parameters are required'
                 });
                 return;
             }
 
-            const messages = await this.messageStorage.getChatHistory(userId, recipientId, limit);
+            const messages = await this.messageStorage.getChatHistory(senderId, recipientId, limit);
 
             res.status(200).json({
                 success: true,
