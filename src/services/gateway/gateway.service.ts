@@ -1,6 +1,7 @@
-import { injectable } from 'inversify';
+import { createService, ServiceIdentifier } from "../../platform/di/container.js";
 
-@injectable()
+export const IGatewayService: ServiceIdentifier<GatewayService> = createService<GatewayService>('gateway-service');
+
 export class GatewayService {
   async init(): Promise<void> {
     console.log('Gateway Service initialized.');

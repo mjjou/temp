@@ -12,7 +12,7 @@
   "scripts": {
     "clean": "rimraf dist && rimraf src/frontend/build && rimraf node_modules",
     "build:backend": "tsc -p tsconfig.json",
-    "start:backend": "node dist/main.js",
+    "start:backend": "MONGODB_URI=mongodb://127.0.0.1:27017/myDatabase node dist/main.js",
     "build-and-start": "npm run build:backend && npm run start:backend",
     "dev:backend": "nodemon",
     "build:frontend": "cd src/frontend && npm run build",
@@ -27,7 +27,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "inversify": "^6.2.2",
     "module-alias": "^2.2.3",
