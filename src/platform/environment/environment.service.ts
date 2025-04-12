@@ -4,8 +4,10 @@ dotenv.config();
 
 export class EnvironmentService {
     static getMongoBaseUri(): string {
-        const uri = process.env.MONGODB_URL;
+        const uri = process.env.MONGODB_URI;
         if (!uri) {
+            console.log('[DEBUG environment.service.ts] entire env =', process.env);
+            console.log('[DEBUG environment.service.ts] MONGODB_URI =', process.env.MONGODB_URI);
             throw new Error('MONGODB_URI is not defined in the environment variables.');
         }
         return uri;

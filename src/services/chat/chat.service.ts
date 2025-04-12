@@ -1,17 +1,29 @@
-import { injectable } from 'inversify';
 import { createChatMongoConnection } from '../../platform/database/mongodb.factory.js';
-import { container } from '../../platform/di/container.js';
 import ChatWebSocketServer from './WebSocketServer.js';
 import MessageStorage from './MessageStorage.js';
+import MessageBroker from './MessageBroker.js';
+import { ChatDispatcher } from './Dispatcher.js';
 
-@injectable()
-export default class ChatService {
+export interface IChatService {
+  init(): Promise<void>;
+  handleRequest(req: any, res: any): Promise<void>;
+}
+
+export const CHAT_SERVICE = Symbol('IChatService');
+
+export class ChatService implements IChatService {
   private client: any;
   private db: any;
-  private chatWebSocketServer!: ChatWebSocketServer;
+  private messageBroker: MessageBroker;
   private messageStorage!: MessageStorage;
+  private chatWebSocketServer!: ChatWebSocketServer;
+  private dispatcher!: ChatDispatcher;
 
-  constructor() {
+  constructor(messageBroker: MessageBroker, messageStorage: MessageStorage, webSocketServer: ChatWebSocketServer, dispatcher: ChatDispatcher) {
+    this.messageBroker = messageBroker;
+    this.messageStorage = messageStorage;
+    this.dispatcher = dispatcher;
+    this.chatWebSocketServer = webSocketServer
   }
 
   async init(): Promise<void> {
@@ -19,63 +31,28 @@ export default class ChatService {
       const connection = await createChatMongoConnection();
       this.client = connection.client;
       this.db = connection.db;
+      console.log('ChatService: MongoDB connected');
 
-      container.bind<any>('ChatDatabase').toConstantValue(this.db);
-      this.messageStorage = new MessageStorage(this.db);
-      container.bind<MessageStorage>('MessageStorage').toConstantValue(this.messageStorage);
+      this.messageStorage = new MessageStorage(this.db, this.messageBroker);
+      console.log('ChatService: MessageStorage initialized');
 
-      this.chatWebSocketServer = container.resolve(ChatWebSocketServer);
+      this.dispatcher = new ChatDispatcher(this.messageBroker, this.messageStorage);
+      console.log('ChatService: Dispatcher initialized');
 
-      this.chatWebSocketServer.init(8080, (clientId, message) => {
-        const parsedMessage = JSON.parse(message);
-        console.log(`Received message from client ${clientId}:`, parsedMessage);
+      this.chatWebSocketServer.init(8081);
+      console.log('ChatService: WebSocket Server started');
 
-      });
-      await this.testCreateMessage();
+      this.messageBroker.init();
+      console.log('ChatService: MessageBroker initialized');
 
-
-      console.log('ChatService: MongoDB connection injected into container.');
+      console.log('ChatService initialized successfully');
     } catch (error) {
       console.error('ChatService failed to initialize:', error);
     }
   }
 
 
-  private async testCreateMessage(): Promise<void> {
-    try {
-      console.log('Testing message creation...');
-
-      // Create a test message
-      const testMessage = {
-        senderId: "testUser1",
-        recipientId: "testUser2",
-        content: "This is a test message",
-        messageType: 'private' as 'broadcast' | 'private',
-        created_at: new Date(),
-        isRead: false
-      };
-
-      // Store the message
-      const messageId = await this.messageStorage.storeMessage(testMessage);
-
-      console.log(`Test message created with ID: ${messageId}`);
-      console.log('Message details:', testMessage);
-
-      // Retrieve the message to verify
-      const messages = await this.messageStorage.getMessages({
-        senderId: "testUser1"
-      } as any, 1);
-
-      if (messages.length > 0) {
-        console.log('Successfully retrieved the test message from database:');
-        console.log(messages[0]);
-      } else {
-        console.log('Failed to retrieve the test message.');
-      }
-
-    } catch (error) {
-      console.error('Error in test message creation:', error);
-    }
+  public async handleRequest(req: any, res: any): Promise<void> {
+    await this.dispatcher.routeRequest(req, res);
   }
 }
-
