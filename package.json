@@ -27,6 +27,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "18653-sda-project-momie": "file:",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "inversify": "^6.2.2",
