@@ -48,6 +48,11 @@ npm run start:frontend
 npm run start:backend
 ```
 
+#### Backend（nodemon）:
+```bash
+npm run dev:backend
+```
+
 For more commands, check package.json
 
 ## MongoDB Connection
