@@ -1,13 +1,18 @@
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { Db, Collection, ObjectId } from 'mongodb';
+import MessageBroker, {
+    MessageType,
+    MessageOperation,
+    MessageHandler
+} from './MessageBroker.js';
 
-interface ChatMessage {
+export interface ChatMessage {
     _id?: ObjectId;
     senderId: string;
     recipientId?: string;
     content: string;
     messageType: 'broadcast' | 'private';
-    created_at: Date;        // This is now the consistent timestamp field
+    created_at: Date;
     isRead?: boolean;
     [key: string]: any;
 }
@@ -27,10 +32,154 @@ interface MessageQuery {
 export default class MessageStorage {
     private db: Db;
     private collection: Collection<ChatMessage>;
+    private brokerSubscriptions: string[] = [];
 
-    constructor(db: Db) {
+    constructor(
+        @inject('Db') db: Db,
+        @inject('MessageBroker') private messageBroker: MessageBroker
+    ) {
         this.db = db;
         this.collection = this.db.collection<ChatMessage>('chatMessages');
+        this.setupBrokerSubscriptions();
+    }
+
+
+    private setupBrokerSubscriptions(): void {
+        // Public Message Creation
+        const publicCreateSub = this.messageBroker.subscribe(
+            MessageType.PUBLIC,
+            MessageOperation.CREATE,
+            this.handlePublicMessageCreation.bind(this)
+        );
+        this.brokerSubscriptions.push(publicCreateSub);
+
+        // Private Message Creation
+        const privateCreateSub = this.messageBroker.subscribe(
+            MessageType.PRIVATE,
+            MessageOperation.CREATE,
+            this.handlePrivateMessageCreation.bind(this)
+        );
+        this.brokerSubscriptions.push(privateCreateSub);
+
+        // Public Message Recall
+        const publicRecallSub = this.messageBroker.subscribe(
+            MessageType.PUBLIC,
+            MessageOperation.RECALL,
+            this.handlePublicMessageRecall.bind(this)
+        );
+        this.brokerSubscriptions.push(publicRecallSub);
+
+        // Private Message Recall
+        const privateRecallSub = this.messageBroker.subscribe(
+            MessageType.PRIVATE,
+            MessageOperation.RECALL,
+            this.handlePrivateMessageRecall.bind(this)
+        );
+        this.brokerSubscriptions.push(privateRecallSub);
+
+        // Public Message Edit
+        const publicEditSub = this.messageBroker.subscribe(
+            MessageType.PUBLIC,
+            MessageOperation.EDIT,
+            this.handlePublicMessageEdit.bind(this)
+        );
+        this.brokerSubscriptions.push(publicEditSub);
+
+        // Private Message Edit
+        const privateEditSub = this.messageBroker.subscribe(
+            MessageType.PRIVATE,
+            MessageOperation.EDIT,
+            this.handlePrivateMessageEdit.bind(this)
+        );
+        this.brokerSubscriptions.push(privateEditSub);
+    }
+
+    private async handlePublicMessageCreation(
+        operation: MessageOperation,
+        message: ChatMessage
+    ): Promise<void> {
+        try {
+            await this.storeMessage(message as ChatMessage);
+        } catch (error) {
+            console.error('Error storing public message:', error);
+        }
+    }
+
+    private async handlePrivateMessageCreation(
+        operation: MessageOperation,
+        message: ChatMessage
+    ): Promise<void> {
+        try {
+            await this.storeMessage(message as ChatMessage);
+        } catch (error) {
+            console.error('Error storing private message:', error);
+        }
+    }
+
+    private async handlePublicMessageRecall(
+        operation: MessageOperation,
+        message: ChatMessage
+    ): Promise<void> {
+        try {
+            if (message.id) {
+                await this.updateMessage(message.id, {
+                    isRecalled: true,
+                    content: 'Message has been recalled',
+                    updated_at: new Date()
+                });
+            }
+        } catch (error) {
+            console.error('Error recalling public message:', error);
+        }
+    }
+
+    private async handlePrivateMessageRecall(
+        operation: MessageOperation,
+        message: ChatMessage
+    ): Promise<void> {
+        try {
+            if (message.id) {
+                await this.updateMessage(message.id, {
+                    isRecalled: true,
+                    content: 'Message has been recalled',
+                    updated_at: new Date()
+                });
+            }
+        } catch (error) {
+            console.error('Error recalling private message:', error);
+        }
+    }
+
+    private async handlePublicMessageEdit(
+        operation: MessageOperation,
+        message: ChatMessage
+    ): Promise<void> {
+        try {
+            if (message.id) {
+                await this.updateMessage(message.id, {
+                    content: message.content,
+                    updated_at: new Date()
+                });
+            }
+        } catch (error) {
+            console.error('Error editing public message:', error);
+        }
+    }
+
+    private async handlePrivateMessageEdit(
+        operation: MessageOperation,
+        message: ChatMessage
+    ): Promise<void> {
+        try {
+            if (message.id) {
+                await this.updateMessage(message.id, {
+                    content: message.content,
+                    updated_at: new Date()
+                });
+            }
+        } catch (error) {
+            console.error('Error editing private message:', error);
+        }
     }
 
     /**
@@ -83,12 +232,11 @@ export default class MessageStorage {
     /**
      * Get messages with optional filtering
      */
-    async getMessages(query: MessageQuery = {}, limit: number = 50, skip: number = 0): Promise<ChatMessage[]> {
+    async getMessages(query: MessageQuery = {}, limit: number = 50): Promise<ChatMessage[]> {
         try {
             const messages = await this.collection
                 .find(query as any)
                 .sort({ created_at: -1 }) // Most recent first, using created_at
-                .skip(skip)
                 .limit(limit)
                 .toArray();
 
