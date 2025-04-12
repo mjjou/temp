@@ -83,12 +83,11 @@ export default class MessageStorage {
     /**
      * Get messages with optional filtering
      */
-    async getMessages(query: MessageQuery = {}, limit: number = 50, skip: number = 0): Promise<ChatMessage[]> {
+    async getMessages(query: MessageQuery = {}, limit: number = 50): Promise<ChatMessage[]> {
         try {
             const messages = await this.collection
                 .find(query as any)
                 .sort({ created_at: -1 }) // Most recent first, using created_at
-                .skip(skip)
                 .limit(limit)
                 .toArray();
 

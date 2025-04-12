@@ -3,6 +3,7 @@ import { createChatMongoConnection } from '../../platform/database/mongodb.facto
 import { container } from '../../platform/di/container.js';
 import ChatWebSocketServer from './WebSocketServer.js';
 import MessageStorage from './MessageStorage.js';
+import { Request, Response } from 'express';
 
 @injectable()
 export default class ChatService {
@@ -31,7 +32,8 @@ export default class ChatService {
         console.log(`Received message from client ${clientId}:`, parsedMessage);
 
       });
-      await this.testCreateMessage();
+      // await this.testCreateMessage();
+      // await this.addPublicMessages();
 
 
       console.log('ChatService: MongoDB connection injected into container.');
@@ -40,42 +42,61 @@ export default class ChatService {
     }
   }
 
-
-  private async testCreateMessage(): Promise<void> {
+  async handlePrivateMessagesRequest(req: Request, res: Response): Promise<void> {
     try {
-      console.log('Testing message creation...');
+      const userId = req.query.userId as string;
+      const recipientId = req.query.recipientId as string;
+      const limit = parseInt(req.query.limit as string) || 50;
 
-      // Create a test message
-      const testMessage = {
-        senderId: "testUser1",
-        recipientId: "testUser2",
-        content: "This is a test message",
-        messageType: 'private' as 'broadcast' | 'private',
-        created_at: new Date(),
-        isRead: false
-      };
-
-      // Store the message
-      const messageId = await this.messageStorage.storeMessage(testMessage);
-
-      console.log(`Test message created with ID: ${messageId}`);
-      console.log('Message details:', testMessage);
-
-      // Retrieve the message to verify
-      const messages = await this.messageStorage.getMessages({
-        senderId: "testUser1"
-      } as any, 1);
-
-      if (messages.length > 0) {
-        console.log('Successfully retrieved the test message from database:');
-        console.log(messages[0]);
-      } else {
-        console.log('Failed to retrieve the test message.');
+      if (!userId || !recipientId) {
+        res.status(400).json({
+          success: false,
+          error: 'userId and recipientId parameters are required'
+        });
+        return;
       }
 
+      const messages = await this.messageStorage.getChatHistory(userId, recipientId, limit);
+
+      res.status(200).json({
+        success: true,
+        count: messages.length,
+        data: messages
+      });
     } catch (error) {
-      console.error('Error in test message creation:', error);
+      console.error('Failed to retrieve private messages:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error occurred while retrieving private messages'
+      });
     }
   }
+
+  async handlePublicMessagesRequest(req: Request, res: Response): Promise<void> {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+
+      const query = {
+        messageType: 'broadcast'
+      };
+
+      const messages = await this.messageStorage.getMessages(query, limit);
+
+      res.status(200).json({
+        success: true,
+        count: messages.length,
+        data: messages
+      });
+    } catch (error) {
+      console.error('Failed to retrieve group messages:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Error occurred while retrieving group messages'
+      });
+    }
+  }
+
+
+
 }
 
