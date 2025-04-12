@@ -1,11 +1,19 @@
-import { injectable } from 'inversify';
 import { createChatMongoConnection } from '../../platform/database/mongodb.factory.js';
-import { container } from '../../platform/di/container.js';
+import { container, createInstance, createService, ServiceIdentifier } from '../../platform/di/container.js';
 import ChatWebSocketServer from './WebSocketServer.js';
 import MessageStorage from './MessageStorage.js';
 
-@injectable()
-export default class ChatService {
+// TODO: revise later
+const ChatDatabaseKey = Symbol('ChatDatabase');
+const MessageStorageKey = Symbol('MessageStorage');
+
+export const IChatService: ServiceIdentifier<IChatService> = createService<IChatService>('chat-service');
+
+export interface IChatService {
+  init(): Promise<void>;
+}
+
+export default class ChatService implements IChatService {
   private client: any;
   private db: any;
   private chatWebSocketServer!: ChatWebSocketServer;
@@ -20,11 +28,11 @@ export default class ChatService {
       this.client = connection.client;
       this.db = connection.db;
 
-      container.bind<any>('ChatDatabase').toConstantValue(this.db);
+      container.set(ChatDatabaseKey, this.db);
       this.messageStorage = new MessageStorage(this.db);
-      container.bind<MessageStorage>('MessageStorage').toConstantValue(this.messageStorage);
+      container.set(MessageStorageKey, this.messageStorage);
 
-      this.chatWebSocketServer = container.resolve(ChatWebSocketServer);
+      this.chatWebSocketServer = createInstance(ChatWebSocketServer);
 
       this.chatWebSocketServer.init(8080, (clientId, message) => {
         const parsedMessage = JSON.parse(message);
@@ -78,4 +86,3 @@ export default class ChatService {
     }
   }
 }
-
