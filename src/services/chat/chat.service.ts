@@ -1,12 +1,17 @@
-import { injectable } from 'inversify';
 import { createChatMongoConnection } from '../../platform/database/mongodb.factory.js';
 import ChatWebSocketServer from './WebSocketServer.js';
 import MessageStorage from './MessageStorage.js';
 import MessageBroker from './MessageBroker.js';
 import { ChatDispatcher } from './Dispatcher.js';
 
-@injectable()
-export default class ChatService {
+export interface IChatService {
+  init(): Promise<void>;
+  handleRequest(req: any, res: any): Promise<void>;
+}
+
+export const CHAT_SERVICE = Symbol('IChatService');
+
+export class ChatService implements IChatService {
   private client: any;
   private db: any;
   private messageBroker: MessageBroker;
@@ -14,9 +19,11 @@ export default class ChatService {
   private chatWebSocketServer!: ChatWebSocketServer;
   private dispatcher!: ChatDispatcher;
 
-  constructor() {
-    this.messageBroker = new MessageBroker();
-    this.chatWebSocketServer = new ChatWebSocketServer(this.messageBroker);
+  constructor(messageBroker: MessageBroker, messageStorage: MessageStorage, webSocketServer: ChatWebSocketServer, dispatcher: ChatDispatcher) {
+    this.messageBroker = messageBroker;
+    this.messageStorage = messageStorage;
+    this.dispatcher = dispatcher;
+    this.chatWebSocketServer = webSocketServer
   }
 
   async init(): Promise<void> {

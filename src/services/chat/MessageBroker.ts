@@ -1,4 +1,3 @@
-import { injectable } from 'inversify';
 import { EventEmitter } from 'events';
 import { ChatMessage } from './MessageStorage.js';
 
@@ -19,7 +18,6 @@ export enum MessageOperation {
 export type MessageHandler = (operation: MessageOperation, message: ChatMessage) => void;
 
 
-@injectable()
 export default class MessageBroker {
     private eventEmitter: EventEmitter;
     private subscriptions: Map<string, { topic: string, handler: MessageHandler }>;
