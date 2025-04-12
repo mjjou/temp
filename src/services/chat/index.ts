@@ -1,6 +1,14 @@
 import { registerService } from '../../platform/di/container.js';
-import ChatService, { IChatService } from './chat.service.js';
+import { IChatService, ChatService } from './chat.service.js';
+import MessageBroker from './MessageBroker.js';
+import { MessageStorage } from './MessageStorage.js';
+import { createChatMongoConnection } from '../../platform/database/mongodb.factory.js';
 
-export function registerChatServices() {
-  registerService(IChatService, new ChatService());
+export async function registerChatServices() {
+  const { db } = await createChatMongoConnection();
+  const broker = new MessageBroker();
+  const storage = new MessageStorage(db);
+  const service = new ChatService(broker, storage);
+
+  registerService(IChatService, service);
 }

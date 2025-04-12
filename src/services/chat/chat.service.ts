@@ -1,88 +1,97 @@
-import { createChatMongoConnection } from '../../platform/database/mongodb.factory.js';
-import { container, createInstance, createService, ServiceIdentifier } from '../../platform/di/container.js';
-import ChatWebSocketServer from './WebSocketServer.js';
-import MessageStorage from './MessageStorage.js';
-
-// TODO: revise later
-const ChatDatabaseKey = Symbol('ChatDatabase');
-const MessageStorageKey = Symbol('MessageStorage');
-
-export const IChatService: ServiceIdentifier<IChatService> = createService<IChatService>('chat-service');
+import { Request, Response } from 'express';
+import { registerHandler } from '../../platform/dispatcher.js';
+import MessageBroker, { MessageOperation, MessageType } from './MessageBroker.js';
+import { MessageStorage } from './MessageStorage.js';
+import { createService, ServiceIdentifier } from '../../platform/di/container.js';
 
 export interface IChatService {
-  init(): Promise<void>;
+  routeRequest(req: Request, res: Response): Promise<void>;
 }
 
-export default class ChatService implements IChatService {
-  private client: any;
-  private db: any;
-  private chatWebSocketServer!: ChatWebSocketServer;
-  private messageStorage!: MessageStorage;
+export const IChatService: ServiceIdentifier<IChatService> =
+  createService<IChatService>('chat-service');
 
-  constructor() {
-  }
+export class ChatService implements IChatService {
+  private broker: MessageBroker;
+  private messageStorage: MessageStorage;
 
-  async init(): Promise<void> {
-    try {
-      const connection = await createChatMongoConnection();
-      this.client = connection.client;
-      this.db = connection.db;
+  private routeHandlers!: Map<string, (payload: any) => Promise<any> | void>;
 
-      container.set(ChatDatabaseKey, this.db);
-      this.messageStorage = new MessageStorage(this.db);
-      container.set(MessageStorageKey, this.messageStorage);
+  constructor(broker: MessageBroker, storage: MessageStorage) {
+    this.broker = broker;
+    this.messageStorage = storage;
 
-      this.chatWebSocketServer = createInstance(ChatWebSocketServer);
+    // register  dispatcher events
+    this.registerHandlers();
 
-      this.chatWebSocketServer.init(8080, (clientId, message) => {
-        const parsedMessage = JSON.parse(message);
-        console.log(`Received message from client ${clientId}:`, parsedMessage);
-
-      });
-      await this.testCreateMessage();
-
-
-      console.log('ChatService: MongoDB connection injected into container.');
-    } catch (error) {
-      console.error('ChatService failed to initialize:', error);
-    }
-  }
-
-
-  private async testCreateMessage(): Promise<void> {
-    try {
-      console.log('Testing message creation...');
-
-      // Create a test message
-      const testMessage = {
-        senderId: "testUser1",
-        recipientId: "testUser2",
-        content: "This is a test message",
-        messageType: 'private' as 'broadcast' | 'private',
-        created_at: new Date(),
-        isRead: false
-      };
-
-      // Store the message
-      const messageId = await this.messageStorage.storeMessage(testMessage);
-
-      console.log(`Test message created with ID: ${messageId}`);
-      console.log('Message details:', testMessage);
-
-      // Retrieve the message to verify
-      const messages = await this.messageStorage.getMessages({
-        senderId: "testUser1"
-      } as any, 1);
-
-      if (messages.length > 0) {
-        console.log('Successfully retrieved the test message from database:');
-        console.log(messages[0]);
-      } else {
-        console.log('Failed to retrieve the test message.');
+    this.broker.subscribe(
+      MessageType.PRIVATE,
+      MessageOperation.CREATE,
+      async (_op, message) => {
+        await this.messageStorage.storeMessage(message);
+        console.log('[ChatService] Stored private message');
       }
+    );
+  }
 
-    } catch (error) {
-      console.error('Error in test message creation:', error);
+  private registerHandlers() {
+    // a map
+    this.routeHandlers = new Map([
+      ['SEND_MESSAGE', this.handleSendMessage.bind(this)],
+      ['RECALL_MESSAGE', this.handleRecallMessage.bind(this)],
+      ['EDIT_MESSAGE', this.handleEditMessage.bind(this)],
+      ['GET_PRIVATE_MESSAGES', this.handlePrivateMessages.bind(this)],
+      ['GET_PUBLIC_MESSAGES', this.handlePublicMessages.bind(this)],
+    ]);
+
+    // register for dispatcher (sync)
+    for (const [type, handler] of this.routeHandlers.entries()) {
+      registerHandler(type, handler);
     }
+  }
+
+  public async routeRequest(req: Request, res: Response) {
+    const { type, payload } = req.body;
+    const handler = this.routeHandlers.get(type);
+
+    if (!handler) {
+      res.status(400).json({ success: false, error: `Unknown request type: ${type}` });
+      return;
+    }
+
+    try {
+      const result = await handler(payload);
+      res.status(200).json({ success: true, ...(result ? { ...result } : {}) });
+    } catch (err) {
+      res.status(500).json({ success: false, error: String(err) });
+    }
+  }
+
+  // === Actual Business Handlers ===
+  private handleSendMessage(payload: any) {
+    this.broker.publishCreate(payload);
+  }
+
+  private handleRecallMessage(payload: any) {
+    this.broker.publishRecall(payload);
+  }
+
+  private handleEditMessage(payload: any) {
+    this.broker.publishEdit(payload);
+  }
+
+  private async handlePrivateMessages(payload: any): Promise<{ count: number; data: any[] }> {
+    const { userId, recipientId, limit = 50 } = payload || {};
+    if (!userId || !recipientId) {
+      throw new Error('userId and recipientId are required');
+    }
+    const messages = await this.messageStorage.getChatHistory(userId, recipientId, limit);
+    return { count: messages.length, data: messages };
+  }
+
+  private async handlePublicMessages(payload: any): Promise<{ count: number; data: any[] }> {
+    const { limit = 50 } = payload || {};
+    const messages = await this.messageStorage.getMessages({ messageType: 'broadcast' }, limit);
+    return { count: messages.length, data: messages };
   }
 }
