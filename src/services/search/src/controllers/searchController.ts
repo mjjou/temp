@@ -1,14 +1,40 @@
 import { Request, Response } from 'express';
-import { search } from '../services/searchService';
+import { SearchContext } from '../services/SearchContext';
+import { KeywordSearch } from '../services/strategies/KeywordSearch';
+import { TagSearch } from '../services/strategies/TagSearch';
+import { MultipleSearch } from '../services/strategies/MultipleSearch';
 
-export const searchHandler = (req: Request, res: Response) => {
-  const query = req.query.q as string;
-  const strategy = (req.query.strategy as string) || 'default';
+export const searchHandler = async (req: Request, res: Response): Promise<void> => {
+  const type = req.query.type?.toString() || 'keyword';
+  const keyword = req.query.keyword?.toString()|| '';
+  const tag = req.query.tag?.toString()|| '';
+  const context = new SearchContext();
+  try{
+    switch(type){
+      case 'tag':
+        context.setStrategy(new TagSearch());
+        res.json(await context.search(tag));
+        break;
 
-  if (!query) {
-    return res.status(400).json({ message: 'Missing query parameter "q"' });
+      case 'keyword':
+        context.setStrategy(new KeywordSearch());
+        res.json(await context.search(keyword));
+        break;
+        
+      case 'multi':
+        context.setStrategy(new MultipleSearch());
+        res.json(await context.search({ keyword, tags: tag }));
+        break;
+
+      default:
+        context.setStrategy(new KeywordSearch());
+        res.json(await context.search(keyword));
+        break;
+    } 
+  }catch(error){
+    console.log('search failed:',error)
+    res.status(500).json({ error: 'Search failed', detail: (error as Error).message });
   }
 
-  const result = search(query, strategy as 'default' | 'regex');
-  res.json(result);
 };
+                      
