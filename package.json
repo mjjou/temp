@@ -27,11 +27,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "18653-sda-project-momie": "file:",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "inversify": "^6.2.2",
     "module-alias": "^2.2.3",
     "mongoose": "^8.10.0",
+    "react-router-dom": "^7.5.0",
     "reflect-metadata": "^0.2.2",
     "tsconfig-paths": "^4.2.0",
     "uuid": "^11.1.0"

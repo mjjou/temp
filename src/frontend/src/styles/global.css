@@ -1,0 +1,38 @@
+body, h1, h2 {
+    background: black;
+    color: white;
+    font-family: sans-serif;
+  }
+  
+  .movie-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .movie-overview {
+    height: 200px;
+    overflow-y: hidden;
+  }
+  
+  .movie-card {
+    width: 200px;
+    padding: 10px;
+    background: #1e1e1e;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .movie-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .movie-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  .brand {
+    color: red;
+  }
