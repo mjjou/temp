@@ -23,13 +23,9 @@ interface Props {
   addComment: (movie: Movie, comment: string) => void;
 }
 
-
-
-
 interface ExpandMoreProps extends IconButtonProps {
   expand: boolean;
 }
-
 
 export const truncateWords = (str: string, n: number): string => {
   if (!str) return "";
@@ -38,10 +34,8 @@ export const truncateWords = (str: string, n: number): string => {
   return words.slice(0, n).join(" ") + "…";
 };
 
-
 const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
   const [newComment, setNewComment] = useState("");
-
 
   const handleCommentChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setNewComment(event.target.value);
@@ -55,12 +49,10 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
   };
 
   return (
-
     <Link to={`/movie/${movie.title}`} style={{ textDecoration: 'none' }}>
-      <Card sx={{ width: 300 }} >
-        
+      <Card sx={{ width: 300, height: 750, display: 'flex', flexDirection: 'column' }} >
         <CardHeader
-  
+          sx={{ height: 100, overflow: 'hidden' }}
           action={
             <IconButton aria-label="settings">
               <MoreVertIcon />
@@ -68,16 +60,12 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
           }
           title={movie.title}
           subheader={
-            
             <div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {movie.release.getFullYear()} - <Rating name="read-only" value={3.5}  precision={0.5} readOnly />
-          </div>
-
-          <p>{movie.genre}</p>
-
-          </div>
-
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {movie.release.getFullYear()} - <Rating name="read-only" value={3.5} precision={0.5} readOnly />
+              </div>
+              <p>{movie.genre}</p>
+            </div>
           }
         />
         <CardMedia
@@ -86,9 +74,9 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
           image={movie.poster}
           alt="Paella dish"
         />
-        <CardContent>
+        <CardContent sx={{ flexGrow: 1, overflow: 'hidden' }}>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {truncateWords(movie.overview, 20)}
+            {truncateWords(movie.overview, 20)}
           </Typography>
         </CardContent>
         <CardActions disableSpacing>
@@ -98,12 +86,9 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
           <IconButton aria-label="share">
             <ShareIcon />
           </IconButton>
-         
         </CardActions>
-  
       </Card>
-      </Link>
-    
+    </Link>
   );
 };
 
