@@ -82,7 +82,7 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
         />
         <CardMedia
           component="img"
-          height="194"
+          height="400"
           image={movie.poster}
           alt="Paella dish"
         />
