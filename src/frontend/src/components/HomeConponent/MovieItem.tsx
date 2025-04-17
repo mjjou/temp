@@ -52,7 +52,20 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
     <Link to={`/movie/${movie.title}`} style={{ textDecoration: 'none' }}>
       <Card sx={{ width: 300, height: 750, display: 'flex', flexDirection: 'column' }} >
         <CardHeader
-          sx={{ height: 100, overflow: 'hidden' }}
+          sx={{ 
+            height: 100, 
+            overflow: 'hidden',
+            '& .MuiCardHeader-content': {
+              overflow: 'hidden'
+            },
+            '& .MuiCardHeader-title': {
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontSize: '1.1rem',
+              fontWeight: 'bold'
+            }
+          }}
           action={
             <IconButton aria-label="settings">
               <MoreVertIcon />
@@ -64,7 +77,7 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 {movie.release.getFullYear()} - <Rating name="read-only" value={3.5} precision={0.5} readOnly />
               </div>
-              <p>{movie.genre}</p>
+              <p style={{ margin: '4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{movie.genre}</p>
             </div>
           }
         />
@@ -72,7 +85,7 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
           component="img"
           height="400"
           image={movie.poster}
-          alt="Paella dish"
+          alt={movie.title}
         />
         <CardContent sx={{ flexGrow: 1, overflow: 'hidden' }}>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
