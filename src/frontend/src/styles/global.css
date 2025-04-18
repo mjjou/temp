@@ -8,6 +8,7 @@ body, h1, h2 {
     display: flex;
     gap: 20px;
     flex-wrap: wrap;
+    justify-content: center;
   }
   
   .movie-overview {

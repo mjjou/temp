@@ -1,10 +1,32 @@
 import React, { ChangeEvent, FormEvent, useState } from "react";
 import { Movie } from "../../types/movie";
+import { styled } from '@mui/material/styles';
+import { Link } from "react-router-dom";
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import CardMedia from '@mui/material/CardMedia';
+import CardContent from '@mui/material/CardContent';
+import Rating from '@mui/material/Rating';
+import CardActions from '@mui/material/CardActions';
+import IconButton, { IconButtonProps } from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
 interface Props {
   movie: Movie;
   addComment: (movie: Movie, comment: string) => void;
 }
+
+interface ExpandMoreProps extends IconButtonProps {
+  expand: boolean;
+}
+
+export const truncateWords = (str: string, n: number): string => {
+  if (!str) return "";
+  const words = str.trim().split(/\s+/);
+  if (words.length <= n) return str;
+  return words.slice(0, n).join(" ") + "…";
+};
 
 const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
   const [newComment, setNewComment] = useState("");
@@ -21,25 +43,51 @@ const MovieItem: React.FC<Props> = ({ movie, addComment }) => {
   };
 
   return (
-    <div className="movie-card">
-      <h2 className="movie-title">{movie.title}</h2>
-      <img src={movie.poster} alt={movie.title} height={300} width={200} />
-      <p className="movie-overview">{movie.overview}</p>
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="comment">Comment:</label>
-        <textarea
-          name="comment"
-          value={newComment}
-          onChange={handleCommentChange}
+    <Link to={`/movie/${movie.title}`} style={{ textDecoration: 'none' }}>
+      <Card sx={{ width: 300, height: 750, display: 'flex', flexDirection: 'column' }} >
+        <CardHeader
+          sx={{ 
+            height: 100, 
+            overflow: 'hidden',
+            '& .MuiCardHeader-content': {
+              overflow: 'hidden'
+            },
+            '& .MuiCardHeader-title': {
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontSize: '1.1rem',
+              fontWeight: 'bold'
+            }
+          }}
+          title={movie.title}
+          subheader={
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {movie.release.getFullYear()} - <Rating name="read-only" value={3.5} precision={0.5} readOnly />
+              </div>
+              <p style={{ margin: '4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{movie.genre}</p>
+            </div>
+          }
         />
-        <button type="submit">Submit</button>
-      </form>
-      <ul>
-        {movie.comments.map((comment, index) => (
-          <li key={index}>{comment}</li>
-        ))}
-      </ul>
-    </div>
+        <CardMedia
+          component="img"
+          height="400"
+          image={movie.poster}
+          alt={movie.title}
+        />
+        <CardContent sx={{ flexGrow: 1, overflow: 'hidden' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {truncateWords(movie.overview, 20)}
+          </Typography>
+        </CardContent>
+        <CardActions disableSpacing>
+          <IconButton aria-label="add to favorites">
+            <FavoriteIcon />
+          </IconButton>
+        </CardActions>
+      </Card>
+    </Link>
   );
 };
 
